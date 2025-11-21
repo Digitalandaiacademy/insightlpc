@@ -234,7 +234,7 @@ const RevenueEvening = () => {
                                                     placeholder="Ex: Hamburger, Shawarma, Crêpes..."
                                                 />
                                                 {filteredSuggestions.length > 0 && (
-                                                    <div className="absolute z-10 w-full bottom-full mb-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                                                    <div className="absolute z-50 w-full bottom-full mb-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
                                                         {filteredSuggestions.map((suggestion, idx) => (
                                                             <button
                                                                 key={idx}
