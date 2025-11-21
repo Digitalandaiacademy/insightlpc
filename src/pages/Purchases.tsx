@@ -221,7 +221,7 @@ const Purchases = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {lines.map((line, index) => {
+                                {lines.map((line) => {
                                     const filteredSuggestions = activeAutocomplete === line.id
                                         ? filterSuggestions(autocompleteQuery)
                                         : [];

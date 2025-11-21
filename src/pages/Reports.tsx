@@ -326,7 +326,7 @@ const Reports = () => {
                                         dataKey="value"
                                     >
                                         {marginData.map((item, idx) => (
-                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                            <Cell key={`cell-${idx}`} fill={COLORS[idx % COLORS.length]} />
                                         ))}
                                     </Pie>
                                     <Tooltip
