@@ -325,7 +325,7 @@ const Reports = () => {
                                         fill="#8884d8"
                                         dataKey="value"
                                     >
-                                        {marginData.map((item, idx) => (
+                                        {marginData.map((_, idx) => (
                                             <Cell key={`cell-${idx}`} fill={COLORS[idx % COLORS.length]} />
                                         ))}
                                     </Pie>
