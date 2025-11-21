@@ -34,7 +34,7 @@ const Purchases = () => {
     const [lines, setLines] = useState<PurchaseLine[]>([]);
 
     // Autocomplete
-    const { suggestions, filterSuggestions } = usePurchaseAutocomplete();
+    const { filterSuggestions } = usePurchaseAutocomplete();
     const [activeAutocomplete, setActiveAutocomplete] = useState<string | null>(null);
     const [autocompleteQuery, setAutocompleteQuery] = useState('');
 

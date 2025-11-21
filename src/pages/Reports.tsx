@@ -184,8 +184,8 @@ const Reports = () => {
                 <button
                     onClick={() => setActiveTab('weekly')}
                     className={`px-4 py-2 font-medium transition-colors ${activeTab === 'weekly'
-                            ? 'text-primary-600 border-b-2 border-primary-600'
-                            : 'text-slate-600 hover:text-slate-800'
+                        ? 'text-primary-600 border-b-2 border-primary-600'
+                        : 'text-slate-600 hover:text-slate-800'
                         }`}
                 >
                     Synthèse Hebdomadaire
@@ -193,8 +193,8 @@ const Reports = () => {
                 <button
                     onClick={() => setActiveTab('monthly')}
                     className={`px-4 py-2 font-medium transition-colors ${activeTab === 'monthly'
-                            ? 'text-primary-600 border-b-2 border-primary-600'
-                            : 'text-slate-600 hover:text-slate-800'
+                        ? 'text-primary-600 border-b-2 border-primary-600'
+                        : 'text-slate-600 hover:text-slate-800'
                         }`}
                 >
                     Synthèse Mensuelle
@@ -202,8 +202,8 @@ const Reports = () => {
                 <button
                     onClick={() => setActiveTab('analysis')}
                     className={`px-4 py-2 font-medium transition-colors ${activeTab === 'analysis'
-                            ? 'text-primary-600 border-b-2 border-primary-600'
-                            : 'text-slate-600 hover:text-slate-800'
+                        ? 'text-primary-600 border-b-2 border-primary-600'
+                        : 'text-slate-600 hover:text-slate-800'
                         }`}
                 >
                     Analyse des Marges
@@ -320,12 +320,12 @@ const Reports = () => {
                                         cx="50%"
                                         cy="50%"
                                         labelLine={false}
-                                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                                        label={({ name, percent }) => `${name}: ${((percent || 0) * 100).toFixed(0)}%`}
                                         outerRadius={120}
                                         fill="#8884d8"
                                         dataKey="value"
                                     >
-                                        {marginData.map((entry, index) => (
+                                        {marginData.map((item, idx) => (
                                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                         ))}
                                     </Pie>
