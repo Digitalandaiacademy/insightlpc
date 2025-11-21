@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { Plus, Trash2, Loader2, Save, X, ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
+import { Plus, Trash2, Loader2, Save, X, ArrowUpCircle, ArrowDownCircle, Search, Edit2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { clsx } from 'clsx';
 import { useTransactionSubcategories } from '../hooks/useSubcategoryAutocomplete';
+import toast from 'react-hot-toast';
 
 interface Transaction {
     id: string;
@@ -19,6 +20,8 @@ const Transactions = () => {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [loading, setLoading] = useState(true);
     const [isAdding, setIsAdding] = useState(false);
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [searchQuery, setSearchQuery] = useState('');
 
     // Form state
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
