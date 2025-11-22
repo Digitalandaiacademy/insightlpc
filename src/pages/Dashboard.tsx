@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { ArrowUpRight, ArrowDownRight, Wallet, Loader2 } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, Wallet, Loader2, Calendar } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
 const Dashboard = () => {
     const [loading, setLoading] = useState(true);
+    const [viewMode, setViewMode] = useState<'monthly' | 'daily'>('monthly');
+    const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
     const [stats, setStats] = useState({
         totalRevenue: 0,
         totalExpenses: 0,
@@ -19,12 +21,21 @@ const Dashboard = () => {
 
     useEffect(() => {
         fetchDashboardData();
-    }, []);
+    }, [viewMode, selectedDate]);
 
     const fetchDashboardData = async () => {
         try {
-            const startDate = startOfMonth(new Date()).toISOString().split('T')[0];
-            const endDate = endOfMonth(new Date()).toISOString().split('T')[0];
+            let startDate: string;
+            let endDate: string;
+
+            if (viewMode === 'monthly') {
+                startDate = startOfMonth(new Date()).toISOString().split('T')[0];
+                endDate = endOfMonth(new Date()).toISOString().split('T')[0];
+            } else {
+                // Daily mode
+                startDate = selectedDate;
+                endDate = selectedDate;
+            }
 
             // Fetch all data concurrently
             const [
@@ -45,7 +56,7 @@ const Dashboard = () => {
             const purchases = purchasesRes.data || [];
             const revenueEntries = revenueEntriesRes.data || [];
 
-            // Calculate Totals (Current Month)
+            // Calculate Totals (Current Period)
             let currentRevenue = 0;
             let currentExpenses = 0;
 
@@ -99,31 +110,61 @@ const Dashboard = () => {
                     type: 'in',
                     label: `Vente ${r.period === 'morning' ? 'Matin' : 'Soir'}: ${r.subcategory}`
                 }))
-            ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+            ].filter(item => item.date >= startDate && item.date <= endDate)
+                .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
                 .slice(0, 5);
 
             setRecentTransactions(allActivity);
 
-            // Prepare Chart Data (Weekly Revenue)
-            const dailyData = new Map();
-            [...transactions.filter(t => t.main_category === 'income'), ...revenueEntries].forEach(t => {
-                const date = format(new Date(t.date), 'dd/MM');
-                dailyData.set(date, (dailyData.get(date) || 0) + t.amount);
-            });
+            // Prepare Chart Data
+            if (viewMode === 'monthly') {
+                // Weekly Revenue for monthly view (last 7 days)
+                const dailyData = new Map();
+                [...transactions.filter(t => t.main_category === 'income'), ...revenueEntries].forEach(t => {
+                    const date = format(new Date(t.date), 'dd/MM');
+                    dailyData.set(date, (dailyData.get(date) || 0) + t.amount);
+                });
 
-            const chartData = Array.from(dailyData.entries())
-                .map(([name, value]) => ({ name, value }))
-                .slice(-7);
+                const chartData = Array.from(dailyData.entries())
+                    .map(([name, value]) => ({ name, value }))
+                    .slice(-7);
 
-            setRevenueData(chartData);
+                setRevenueData(chartData);
+            } else {
+                // Daily view - breakdown by period (morning/evening)
+                const periodData = new Map<string, number>();
+                periodData.set('Matin', 0);
+                periodData.set('Soir', 0);
+                periodData.set('Autres', 0);
+
+                revenueEntries.forEach(r => {
+                    if (r.date === selectedDate) {
+                        if (r.period === 'morning') {
+                            periodData.set('Matin', (periodData.get('Matin') || 0) + r.amount);
+                        } else if (r.period === 'evening') {
+                            periodData.set('Soir', (periodData.get('Soir') || 0) + r.amount);
+                        }
+                    }
+                });
+
+                transactions.filter(t => t.main_category === 'income' && t.date === selectedDate).forEach(t => {
+                    periodData.set('Autres', (periodData.get('Autres') || 0) + t.amount);
+                });
+
+                const chartData = Array.from(periodData.entries())
+                    .map(([name, value]) => ({ name, value }))
+                    .filter(item => item.value > 0);
+
+                setRevenueData(chartData);
+            }
 
             // Prepare Expense Breakdown
             const expenseByCategory = new Map();
-            transactions.filter(t => t.main_category === 'expense').forEach(t => {
+            transactions.filter(t => t.main_category === 'expense' && t.date >= startDate && t.date <= endDate).forEach(t => {
                 const catName = t.subcategory || 'Autre';
                 expenseByCategory.set(catName, (expenseByCategory.get(catName) || 0) + t.amount);
             });
-            purchases.forEach(p => {
+            purchases.filter(p => p.date >= startDate && p.date <= endDate).forEach(p => {
                 expenseByCategory.set('Achats Ingrédients', (expenseByCategory.get('Achats Ingrédients') || 0) + p.total_price);
             });
 
@@ -151,6 +192,43 @@ const Dashboard = () => {
 
     return (
         <div className="space-y-6">
+            {/* View Mode Selector */}
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div className="flex gap-2">
+                    <button
+                        onClick={() => setViewMode('monthly')}
+                        className={`px-4 py-2 rounded-lg font-medium transition-colors ${viewMode === 'monthly'
+                            ? 'bg-primary-600 text-white'
+                            : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+                            }`}
+                    >
+                        Vue Mensuelle
+                    </button>
+                    <button
+                        onClick={() => setViewMode('daily')}
+                        className={`px-4 py-2 rounded-lg font-medium transition-colors ${viewMode === 'daily'
+                            ? 'bg-primary-600 text-white'
+                            : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+                            }`}
+                    >
+                        Vue Journalière
+                    </button>
+                </div>
+
+                {/* Date Selector (visible only in daily mode) */}
+                {viewMode === 'daily' && (
+                    <div className="flex items-center gap-2">
+                        <Calendar className="w-5 h-5 text-slate-500" />
+                        <input
+                            type="date"
+                            value={selectedDate}
+                            onChange={(e) => setSelectedDate(e.target.value)}
+                            className="px-4 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+                        />
+                    </div>
+                )}
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Revenue Card */}
                 <div className="glass-card p-6 rounded-xl">
@@ -159,7 +237,7 @@ const Dashboard = () => {
                             <ArrowUpRight className="w-6 h-6" />
                         </div>
                         <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-full">
-                            Ce mois
+                            {viewMode === 'monthly' ? 'Ce mois' : 'Ce jour'}
                         </span>
                     </div>
                     <h3 className="text-slate-500 text-sm font-medium">Chiffre d'Affaires</h3>
@@ -175,7 +253,7 @@ const Dashboard = () => {
                             <ArrowDownRight className="w-6 h-6" />
                         </div>
                         <span className="text-xs font-medium text-red-600 bg-red-50 px-2 py-1 rounded-full">
-                            Ce mois
+                            {viewMode === 'monthly' ? 'Ce mois' : 'Ce jour'}
                         </span>
                     </div>
                     <h3 className="text-slate-500 text-sm font-medium">Dépenses Totales</h3>
@@ -204,7 +282,9 @@ const Dashboard = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Revenue Chart */}
                 <div className="glass-card p-6 rounded-xl">
-                    <h3 className="text-lg font-bold text-slate-800 mb-6">Tendance des Revenus</h3>
+                    <h3 className="text-lg font-bold text-slate-800 mb-6">
+                        {viewMode === 'monthly' ? 'Tendance des Revenus' : 'Répartition des Revenus du Jour'}
+                    </h3>
                     <div className="h-64">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={revenueData}>
